@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quarkus Todo App</title>
+    <!-- PatternFly CSS from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly@5.3.0/patternfly.css" crossorigin="anonymous">
+    <!-- PatternFly Core JS for components (optional, but good practice) -->
+    <script src="https://unpkg.com/@patternfly/patternfly@5.3.0/patternfly.min.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            background-color: var(--pf-v5-global--BackgroundColor--200);
+            padding: var(--pf-v5-global--spacer--4xl);
+        }
+        .pf-c-page {
+            max-width: 600px;
+            margin: auto;
+            background-color: var(--pf-v5-global--BackgroundColor--100);
+            border: var(--pf-v5-global--BorderWidth--sm) solid var(--pf-v5-global--BorderColor--100);
+            border-radius: var(--pf-v5-global--BorderRadius--lg);
+            box-shadow: var(--pf-v5-global--BoxShadow--lg);
+            padding: var(--pf-v5-global--spacer--3xl);
+        }
+        .pf-c-list__item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--pf-v5-global--BackgroundColor--light);
+            border: var(--pf-v5-global--BorderWidth--sm) solid var(--pf-v5-global--BorderColor--100);
+            border-radius: var(--pf-v5-global--BorderRadius--lg);
+            padding: var(--pf-v5-global--spacer--md) var(--pf-v5-global--spacer--xl);
+            margin-bottom: var(--pf-v5-global--spacer--md);
+        }
+    </style>
+</head>
+<body class="pf-v5-c-page">
+    <div class="pf-v5-c-page__main">
+        <h1 class="pf-v5-c-title pf-m-4xl pf-m-center" style="margin-bottom: var(--pf-v5-global--spacer--2xl);">Quarkus Todo List</h1>
+
+        <div class="pf-v5-l-flex pf-m-align-items-center" style="gap: var(--pf-v5-global--spacer--md); margin-bottom: var(--pf-v5-global--spacer--2xl);">
+            <input type="text" id="todoInput" placeholder="Enter a new todo item..." class="pf-v5-c-form-control" style="flex-grow: 1;">
+            <button id="addButton" class="pf-v5-c-button pf-m-primary pf-m-block">Add Todo</button>
+        </div>
+
+        <ul id="todoList" class="pf-v5-c-list">
+            <!-- Todo items will be appended here -->
+        </ul>
+    </div>
+
+    <script>
+        const todoInput = document.getElementById('todoInput');
+        const addButton = document.getElementById('addButton');
+        const todoList = document.getElementById('todoList');
+        const apiUrl = '/api/todos';
+
+        // Function to fetch and render todos
+        async function fetchTodos() {
+            try {
+                const response = await fetch(apiUrl);
+                const todos = await response.json();
+                renderTodos(todos);
+            } catch (error) {
+                console.error('Error fetching todos:', error);
+            }
+        }
+
+        // Function to render todos on the page
+        function renderTodos(todos) {
+            todoList.innerHTML = ''; // Clear existing list
+            todos.forEach(todo => {
+                const li = document.createElement('li');
+                li.className = 'pf-c-list__item';
+                li.innerHTML = `
+                    <span style="flex-grow: 1;">${todo.title}</span>
+                    <button class="pf-v5-c-button pf-m-danger" data-id="${todo.id}">Delete</button>
+                `;
+                todoList.appendChild(li);
+            });
+        }
+
+        // Function to add a new todo
+        async function addTodo() {
+            const title = todoInput.value.trim();
+            if (title) {
+                try {
+                    await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title, completed: false })
+                    });
+                    todoInput.value = ''; // Clear input field
+                    fetchTodos(); // Refresh the list
+                } catch (error) {
+                    console.error('Error adding todo:', error);
+                }
+            }
+        }
+
+        // Function to delete a todo
+        async function deleteTodo(id) {
+            try {
+                await fetch(`${apiUrl}/${id}`, {
+                    method: 'DELETE'
+                });
+                fetchTodos(); // Refresh the list
+            } catch (error) {
+                console.error('Error deleting todo:', error);
+            }
+        }
+
+        // Event listeners
+        addButton.addEventListener('click', addTodo);
+        todoInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                addTodo();
+            }
+        });
+
+        todoList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('pf-m-danger')) {
+                const id = event.target.dataset.id;
+                deleteTodo(id);
+            }
+        });
+
+        // Initial fetch of todos when the page loads
+        document.addEventListener('DOMContentLoaded', fetchTodos);
+    </script>
+</body>
+</html>

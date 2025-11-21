@@ -11,11 +11,12 @@ This application uses Red Hat's Maven repositories to download its dependencies 
 
 ### Prerequisites
 
-* Java 17+
+To build locally:
+    - Java 17+
+    - Maven 3.8.x+
 
-* Maven 3.8.x+
-
-* Docker or Podman (for container build)
+To build and run the application in containers:
+    - Docker or Podman
 
 * A PostgreSQL database instance (ensure it's accessible and update application.properties with its connection details).
 
@@ -68,6 +69,10 @@ If you want to build an _über-jar_, execute the following command:
 ```shell script
 mvn package -Dquarkus.package.jar.type=uber-jar
 ```
+- or -
+```shell script
+make build
+```
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
 
@@ -92,3 +97,17 @@ If you want to create a container with the qtodo application, like the one we us
 ```shell script
 podman build -t localhost/qtodo:latest -f Containerfile.build
 ```
+
+## Signing the package using the RHTAS services provided by a ZTVP cluster
+
+In our ZTVP cluster, we have Red Hat's Trusted Artifact Signer (**RHTAS**) deployed. This allows us to sign the built package.
+
+Since the signing process involves several steps, a container has been created to simplify it. This process requires connectivity to the ZTVP cluster, and the binary to be signed must be located in the `target/` directory.
+
+```shell script
+export KUBECONFIG=~/.kube/kubeconfig-ztvp
+export ARTIFACT=qtodo-1.0.0-SNAPSHOT-runner.jar
+make sign-artifact
+```
+
+This will generate a `.bundle` file with the artifact signature in the same directory.

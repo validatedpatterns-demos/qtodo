@@ -3,9 +3,11 @@ TAG := $(or $(TAG),latest)
 TAG_SIGNER := $(or $(TAG_SIGNER),signer)
 IMAGE := $(or $(IMAGE),localhost/qtodo:$(TAG))
 IMAGE_SIGNER := $(or $(IMAGE_SIGNER),localhost/qtodo-signer:$(TAG))
+IMAGE_SIGNED := $(or $(IMAGE_SIGNED),localhost/qtodo-signed:$(TAG))
 VERSION := $(or $(VERSION),1.0.0)
 ARTIFACT := $(or $(ARTIFACT),qtodo-$(VERSION)-SNAPSHOT-runner.jar)
 KUBECONFIG := $(or $(KUBECONFIG),$(HOME)/.kube/config)
+CONTAINER_AUTH_JSON := $(or $(CONTAINER_AUTH_JSON),$(HOME)/.config/containers/auth.json)
 
 export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BIN = $(ROOT_DIR)/target
@@ -27,10 +29,24 @@ build-local: clean
 
 sign-artifact:
 	$(CONTAINER_COMMAND) build -t $(IMAGE_SIGNER) -f Containerfile.signer
-	$(CONTAINER_COMMAND) run --rm -v $(BIN):/signer$(SELINUX_SUFFIX) -v $(KUBECONFIG):/root/.kube/config$(SELINUX_SUFFIX) $(IMAGE_SIGNER) /signer/$(ARTIFACT)
+	$(CONTAINER_COMMAND) run --rm \
+		-v $(BIN):/signer$(SELINUX_SUFFIX) \
+		-v $(KUBECONFIG):/root/.kube/config$(SELINUX_SUFFIX) \
+		$(IMAGE_SIGNER) /usr/local/bin/sign-jar.sh /signer/$(ARTIFACT)
+
+sign-image:
+	$(CONTAINER_COMMAND) build -t $(IMAGE_SIGNER) -f Containerfile.signer
+	$(CONTAINER_COMMAND) run --rm \
+		-v $(CONTAINER_AUTH_JSON):/root/.config/containers/auth.json$(SELINUX_SUFFIX) \
+		-v $(KUBECONFIG):/root/.kube/config$(SELINUX_SUFFIX) \
+		-e REGISTRY_AUTH_FILE=/root/.config/containers/auth.json \
+		$(IMAGE_SIGNER) /usr/local/bin/sign-image.sh $(IMAGE)
 
 build-image:
 	$(CONTAINER_COMMAND) build -t $(IMAGE) -f Containerfile.build
+
+build-signed-image:
+	$(CONTAINER_COMMAND) build -t $(IMAGE_SIGNED) -f Containerfile --build-arg artifact=$(ARTIFACT) --build-arg version=$(VERSION)
 
 push:
 	$(CONTAINER_COMMAND) push $(IMAGE)

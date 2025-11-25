@@ -111,3 +111,18 @@ make sign-artifact
 ```
 
 This will generate a `.bundle` file with the artifact signature in the same directory.
+
+## Signing the package using the RHTAS services provided by a ZTVP cluster
+
+Similarly to signing a JAR file, we can sign an OCI image uploaded to a private Quay repository.
+
+In this case, we will need to have previously logged into the Quay repository and pass the image we want to sign as environment variables.
+
+```shell script
+export QUAY_HOSTNAME=quay-registry-quay-quay-enterprise.apps.your.domain
+export KUBECONFIG=~/.kube/kubeconfig-ztvp
+export IMAGE="${QUAY_HOSTNAME}/my-org/qtodo-signed@sha256:ad7ea..."
+
+podman login "${QUAY_HOSTNAME}" -u your-user  # --tls-verify=false
+make sign-image
+```

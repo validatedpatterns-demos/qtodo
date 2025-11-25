@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: qtodo-pod
+  name: qtodo-pod
+spec:
+  containers:
+  - args:
+    - run-postgresql
+    env:
+    - name: POSTGRESQL_USER
+      value: qtodo_user
+    - name: POSTGRESQL_PASSWORD
+      value: RedH@tPassw0rd
+    - name: POSTGRESQL_DATABASE
+      value: tasks
+    image: registry.redhat.io/rhel8/postgresql-16:latest
+    name: postgresqldatabase
+    securityContext:
+      runAsNonRoot: true
+  - args:
+    - -e
+    - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://localhost:5432/tasks
+    - -e
+    - QUARKUS_DATASOURCE_USERNAME=qtodo_user
+    - -e
+    - QUARKUS_DATASOURCE_PASSWORD=RedH@tPassw0rd
+    - -e
+    - QUARKUS_DATASOURCE_DB_KIND=postgresql
+    image: localhost/qtodo:latest
+    name: qtodo
+    ports:
+    - containerPort: 8080
+      hostPort: 8080
+    securityContext: {}

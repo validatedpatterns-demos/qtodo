@@ -11,11 +11,11 @@ This application uses Red Hat's Maven repositories to download its dependencies 
 
 ### Prerequisites
 
-* Java 17+
+To build locally:
+    - Java 17+
 
-* Maven 3.8.x+
-
-* Docker or Podman (for container build)
+To build and run the application in containers:
+    - Docker or Podman
 
 * A PostgreSQL database instance (ensure it's accessible and update application.properties with its connection details).
 
@@ -33,7 +33,7 @@ podman run -d --name postgresql_database -e POSTGRESQL_USER=qtodo_user -e POSTGR
 You can then run your application in dev mode that enables live coding using:
 
 ```shell script
-mvn quarkus:dev
+./mvnw -s settings.xml quarkus:dev
 ```
 
 ### Running using containers
@@ -55,7 +55,7 @@ Tasks will be persisted in the PostgreSQL database.
 The application can be packaged using:
 
 ```shell script
-mvn package
+./mvnw package
 ```
 
 It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
@@ -66,7 +66,11 @@ The application is now runnable using `java -jar target/quarkus-app/quarkus-run.
 If you want to build an _über-jar_, execute the following command:
 
 ```shell script
-mvn package -Dquarkus.package.jar.type=uber-jar
+./mvnw package -Dquarkus.package.jar.type=uber-jar
+```
+- or -
+```shell script
+make build
 ```
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
@@ -76,19 +80,26 @@ The application, packaged as an _über-jar_, is now runnable using `java -jar ta
 You can create a native executable using:
 
 ```shell script
-mvn package -Dnative
+./mvnw -s settings.xml package -Dnative
 ```
 
 Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
 
 ```shell script
-mvn package -Dnative -Dquarkus.native.container-build=true
+./mvnw -s settings.xml package -Dnative -Dquarkus.native.container-build=true
 ```
 
 ## Creating a container with the application
 
-If you want to create a container with the qtodo application, like the one we used later in ZTVP, you can do so using:
+If you want to create a container with the qtodo application, you can do so using:
 
 ```shell script
-podman build -t localhost/qtodo:latest -f Containerfile.build
+make build-image
+```
+
+We can also add our own manually generated _jar_ to the image instead of performing the build step. That file must be in the `target/` directory.
+```shell script
+export ARTIFACT=qtodo-example-runner.jar
+
+make build-image-binary
 ```

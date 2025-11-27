@@ -1,9 +1,12 @@
 FROM registry.access.redhat.com/ubi10/ubi-minimal:10.0-1754585875
 
+ARG version=1.0.0
+ARG artifact=qtodo-$version-SNAPSHOT-runner.jar
+
 # Maintainer information
 LABEL maintainer="Zero Trust Validated Patterns Team <ztvp-arch-group@redhat.com>" \
       description="QTodo - Persistent Web Todo Application" \
-      version="1.0.0" \
+      version="$version" \
       io.openshift.tags="quarkus,java,web,pattern" \
       io.openshift.expose-services="8080:http" \
       io.k8s.description="Persistent Web Todo application built with Quarkus" \
@@ -27,7 +30,7 @@ RUN mkdir -p /deployments && chown -R quarkus:quarkus /deployments
 # Set working directory
 WORKDIR /deployments
 # Copy Quarkus uber jar with proper ownership
-COPY --chown=quarkus:quarkus target/qtodo-1.0.0-SNAPSHOT-runner.jar ./
+COPY --chown=quarkus:quarkus target/$artifact ./
 
 
 # Set proper permissions
@@ -44,7 +47,7 @@ USER quarkus
 # Set JVM options for containerized environments (Pulled production settings from Quarkus documentation)
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication" \
     JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager" \
-    JAVA_APP_JAR="/deployments/qtodo-1.0.0-SNAPSHOT-runner.jar" \
+    JAVA_APP_JAR="/deployments/$artifact" \
     JAVA_DEBUG_PORT="*:5005"
 
 #    Define entrypoint and default command

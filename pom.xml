@@ -85,6 +85,9 @@
                         <phase>initialize</phase>
                     </execution>
                 </executions>
+                <configuration>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>

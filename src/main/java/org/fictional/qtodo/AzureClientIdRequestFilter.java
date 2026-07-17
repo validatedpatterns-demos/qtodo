@@ -25,6 +25,12 @@ import io.quarkus.oidc.common.OidcRequestFilter;
  * In Quarkus 3.20.x OidcProviderClientImpl, the jwt-bearer authentication
  * branch only adds client_assertion and client_assertion_type but skips
  * client_id. This filter appends it to the encoded form body.
+ *
+ * The filter is gated on {@code qtodo.oidc.inject-client-id} (default false)
+ * so it only activates for providers that require the extra parameter (e.g.
+ * Entra ID). Keycloak's federated-jwt authenticator rejects the request when
+ * client_id does not match the JWT sub claim, so the filter must stay inactive
+ * for non-Entra deployments.
  */
 @ApplicationScoped
 @Unremovable
@@ -36,9 +42,12 @@ public class AzureClientIdRequestFilter implements OidcRequestFilter {
     @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
 
+    @ConfigProperty(name = "qtodo.oidc.inject-client-id", defaultValue = "false")
+    boolean injectClientId;
+
     @Override
     public void filter(OidcRequestContext requestContext) {
-        if (requestContext.requestBody() == null) {
+        if (!injectClientId || requestContext.requestBody() == null) {
             return;
         }
         String body = requestContext.requestBody().toString();
